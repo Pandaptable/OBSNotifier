@@ -4,6 +4,8 @@ using OBSWebsocketDotNet.Types;
 using OBSWebsocketDotNet.Types.Events;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace OBSNotifier
 {
@@ -367,9 +369,59 @@ namespace OBSNotifier
             });
         }
 
-        private void Obs_ReplayBufferSaved(object sender, ReplayBufferSavedEventArgs e)
+        private async void Obs_ReplayBufferSaved(object sender, ReplayBufferSavedEventArgs e)
         {
-            InvokeNotif(() => ShowNotif(NotificationType.ReplaySaved, FormatterOneArg, e.SavedReplayPath));
+            string replayPath = e.SavedReplayPath;
+
+            // Wait for the file to appear recursively in subdirectories
+            string foundFilePath = await WaitForFileAsync(replayPath);
+
+            // Invoke the notification with the updated directory
+            InvokeNotif(() => ShowNotif(NotificationType.ReplaySaved, FormatterOneArg, foundFilePath));
+        }
+
+        private async Task<string> WaitForFileAsync(string originalFilePath)
+        {
+            const int delay = 500; // Delay in milliseconds
+            int attempts = 0; // For tracking retry attempts
+
+            // Recursively search for the file
+            while (true)
+            {
+                string foundFile = await FindFileAsync(originalFilePath);
+                if (foundFile != null)
+                {
+                    return foundFile; // Return the found file path
+                }
+
+                attempts++;
+                await Task.Delay(delay); // Wait before checking again
+            }
+        }
+
+        private async Task<string> FindFileAsync(string filePath)
+        {
+            try
+            {
+                string directory = Path.GetDirectoryName(filePath);
+                string fileName = Path.GetFileName(filePath);
+
+                // Search for the file recursively in all subdirectories
+                string[] files = Directory.GetFiles(directory, fileName, SearchOption.AllDirectories);
+
+                if (files.Length > 0)
+                {
+                    return files[0]; // Return the found file path
+                }
+                else
+                {
+                    return null; // File not found
+                }
+            }
+            catch (Exception ex)
+            {
+                return null; // Handle exceptions (e.g., directory access issues)
+            }
         }
         #endregion
 

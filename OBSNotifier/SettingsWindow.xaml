@@ -76,6 +76,7 @@
                 <CheckBox x:Name="cb_use_safe_area" Content="{DynamicResource settings_window_use_safe_zone}" Unchecked="cb_use_safe_area_Unchecked"  Checked="cb_use_safe_area_Checked" VerticalContentAlignment="Center"/>
                 <Separator Height="8" Style="{StaticResource emptySeparator}"/>
             </StackPanel>
+            
 
             <StackPanel x:Name="group_options">
                 <Label Content="{DynamicResource settings_window_style_options_label}"/>
